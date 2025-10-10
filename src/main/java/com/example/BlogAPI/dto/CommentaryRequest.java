@@ -1,8 +1,5 @@
 package com.example.BlogAPI.dto;
 
-import com.example.BlogAPI.entities.Post;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
