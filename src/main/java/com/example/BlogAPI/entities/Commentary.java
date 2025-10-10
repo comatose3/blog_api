@@ -21,13 +21,28 @@ public class Commentary {
     private int id;
 
     @NotNull
-    @Size(min = 6, max = 50, message = "Некорректный никнейм")
     private String author;
+
+    @ManyToOne()
+    @JoinColumn(name = "post", referencedColumnName = "id")
+    private Post post;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-//    @ManyToOne()
-//    @JoinColumn(name = "post", referencedColumnName = "id")
-//    private Post post;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
 }

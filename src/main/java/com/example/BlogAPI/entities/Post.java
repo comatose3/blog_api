@@ -34,6 +34,9 @@ public class Post {
         this.content = content;
     }
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    private List<Commentary> comments = new ArrayList<>();
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

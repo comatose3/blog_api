@@ -16,9 +16,9 @@ public class CommentaryRequest {
     @Size(min = 6, max = 50, message = "Некорректный никнейм")
     private String author;
 
-    @ManyToOne()
-    @JoinColumn(name = "post", referencedColumnName = "id")
-    private Post post;
+    @NotNull
+    @Size(min = 5, max = 1000)
+    private String text;
 
     @NotNull
     private Integer postId;

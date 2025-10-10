@@ -6,18 +6,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostResponse {
+public class CommentaryResponse {
     private Integer id;
     private String author;
-    private String name;
-    private String content;
-    private List<Integer> commentariesId;
+    private String text;
+    private Integer postId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
