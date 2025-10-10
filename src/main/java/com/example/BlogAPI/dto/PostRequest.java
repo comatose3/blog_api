@@ -18,6 +18,6 @@ public class PostRequest {
     private String name;
 
     @NotBlank
-    @Size(min = 10, max = 1000)
+    @Size(min = 10, max = 1000, message = "Недопустимое количество символов")
     private String content;
 }
