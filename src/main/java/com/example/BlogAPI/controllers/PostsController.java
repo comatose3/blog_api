@@ -21,12 +21,10 @@ public class PostsController {
 
     private final PostsService postsService;
     private final ModelMapper modelMapper;
-    private final PostValidator postValidator;
 
     @Autowired
-    public PostsController(PostsService postsService, PostValidator postValidator, ModelMapper modelMapper) {
+    public PostsController(PostsService postsService, ModelMapper modelMapper) {
         this.postsService = postsService;
-        this.postValidator = postValidator;
         this.modelMapper = modelMapper;
     }
 

@@ -1,6 +1,5 @@
 package com.example.BlogAPI.services;
 
-import com.example.BlogAPI.dto.PostRequest;
 import com.example.BlogAPI.dto.PostUpdate;
 import com.example.BlogAPI.entities.Post;
 import com.example.BlogAPI.repositories.PostsRepository;
@@ -39,7 +38,7 @@ public class PostsService {
         post.setName(postUpdate.getName());
         post.setContent(postUpdate.getContent());
 
-        return postsRepository.save(post);
+        return post;
     }
 
     @Transactional

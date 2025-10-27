@@ -2,21 +2,21 @@ package com.example.BlogAPI.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-//
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class CommentaryRequest {
     @NotNull
-    @Size(min = 6, max = 50, message = "Некорректный никнейм")
+    @Size(min = 2, max = 50, message = "Некорректный никнейм")
     private String author;
 
     @NotNull
-    @Size(min = 5, max = 1000)
+    @Size(min = 1, max = 1000)
     private String text;
-
-    @NotNull
-    private Integer postId;
 }

@@ -1,9 +1,8 @@
 package com.example.BlogAPI.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +34,7 @@ public class Post {
     }
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("post")
     private List<Commentary> comments = new ArrayList<>();
 
     @Column(name = "created_at")
@@ -55,9 +55,15 @@ public class Post {
         updatedAt = LocalDateTime.now();
     }
 
-//    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<Commentary> comments =  new ArrayList<>();
-//
+    public void addCommentary(Commentary commentary) {
+        comments.add(commentary);
+        commentary.setPost(this);
+    }
+
+    public void removeCommentary(Commentary commentary) {
+        comments.remove(commentary);
+        commentary.setPost(null);
+    }
 //    @ManyToMany()
 //    @JoinTable(
 //            name = "post_tag",
