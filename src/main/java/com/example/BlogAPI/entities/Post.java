@@ -37,6 +37,14 @@ public class Post {
     @JsonIgnoreProperties("post")
     private List<Commentary> comments = new ArrayList<>();
 
+    @ManyToMany()
+    @JoinTable(
+            name = "post_tag",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags = new ArrayList<>();
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
