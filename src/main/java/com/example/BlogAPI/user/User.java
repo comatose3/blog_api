@@ -2,6 +2,7 @@ package com.example.BlogAPI.user;
 
 import com.example.BlogAPI.comment.Commentary;
 import com.example.BlogAPI.post.Post;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,6 +42,19 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnoreProperties("user")
     private List<Commentary> comments = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_following",
+            joinColumns = @JoinColumn(name = "follower_id"),
+            inverseJoinColumns = @JoinColumn(name = "following_id")
+    )
+    @JsonIgnore
+    private Set<User> following = new HashSet<>();
+
+    @ManyToMany(mappedBy = "following")
+    @JsonIgnore
+    private Set<User> followers = new HashSet<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -90,5 +104,27 @@ public class User {
     public void removeCommentary(Commentary commentary) {
         comments.remove(commentary);
         commentary.setUser(null);
+    }
+
+    public void follow(User userToFollow) {
+        following.add(userToFollow);
+        userToFollow.getFollowers().add(this);
+    }
+
+    public void unfollow(User userToUnfollow) {
+        following.remove(userToUnfollow);
+        userToUnfollow.getFollowers().remove(this);
+    }
+
+    public boolean isFollowing(User user) {
+        return following.contains(user);
+    }
+
+    public int getFollowerCount() {
+        return followers.size();
+    }
+
+    public int getFollowingCount() {
+        return following.size();
     }
 }
