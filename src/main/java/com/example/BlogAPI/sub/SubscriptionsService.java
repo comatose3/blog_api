@@ -39,11 +39,8 @@ public class SubscriptionsService {
                 .collect(Collectors.toList());
     }
 
-    public List<UserResponse> searchUsers(String query, User currentUser) {
-        List<User> users = usersRepository.findByUsernameContainingIgnoreCase(query);
-        return users.stream()
-                .map(user -> new UserResponse(user, currentUser))
-                .collect(Collectors.toList());
+    public List<UserResponse> searchUsers(String query) {
+        return usersRepository.findByUsernameContainingIgnoreCase(query);
     }
 
     @Transactional

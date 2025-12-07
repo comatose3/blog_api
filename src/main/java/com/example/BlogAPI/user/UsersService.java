@@ -34,9 +34,15 @@ public class UsersService {
     }
 
     public UserResponse getUserById(Long id) {
-        User user = usersRepository.findById(id).
-                orElseThrow(() -> new EntityNotFoundException("User with id " + id + " not found!"));
-        return convertToUserResponse(user);
+        return convertToUserResponse(usersRepository.findById(id).stream()
+                .findAny()
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id)));
+    }
+
+    public UserResponse getUserByUsername(String username) {
+        return convertToUserResponse(usersRepository.findByUsername(username).stream()
+                .findAny()
+                .orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found!")));
     }
 
     @Transactional
@@ -60,6 +66,33 @@ public class UsersService {
             throw new EntityNotFoundException("User with id " + id + " not found!");
         }
         usersRepository.deleteById(id);
+    }
+
+    public List<UserResponse> searchUsers(String query) {
+        return usersRepository.findByUsernameContainingIgnoreCase(query);
+    }
+
+    // Методы проверки
+    public boolean usernameExists(String username) {
+        return usersRepository.existsByUsername(username);
+    }
+
+    public boolean emailExists(String email) {
+        return usersRepository.existsByEmail(email);
+    }
+
+    // Методы изменения
+    public UserResponse updateUserProfile(Long userId, UserRequest request) {
+        UserResponse user = getUserById(userId);
+
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (emailExists(request.getEmail())) {
+                throw new RuntimeException("Email already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
+
+        return userRepository.save(user);
     }
 
     private User convertToUser(UserRequest userRequest) {
