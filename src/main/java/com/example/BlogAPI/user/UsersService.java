@@ -6,6 +6,7 @@ import com.example.BlogAPI.user.dto.UserUpdate;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,9 +82,8 @@ public class UsersService {
         return usersRepository.existsByEmail(email);
     }
 
-    // Методы изменения
     public UserResponse updateUserProfile(Long userId, UserRequest request) {
-        UserResponse user = getUserById(userId);
+        User user = usersRepository.getUserById(userId);
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (emailExists(request.getEmail())) {
@@ -92,7 +92,17 @@ public class UsersService {
             user.setEmail(request.getEmail());
         }
 
-        return userRepository.save(user);
+        return convertToUserResponse(usersRepository.save(user));
+    }
+
+    public User getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String username = authentication.getName();
+        return usersRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
     }
 
     private User convertToUser(UserRequest userRequest) {

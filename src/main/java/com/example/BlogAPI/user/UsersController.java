@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -69,7 +68,7 @@ public class UsersController {
     @PostMapping("/{userId}/follow")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> followUser(@PathVariable Long userId, Authentication authentication) {
-        UserResponse currentUser = getCurrentUser(authentication);
+        User currentUser = usersService.getCurrentUser(authentication);
         UserResponse userToFollow = usersService.getUserById(userId);
 
         String username = userToFollow.getUsername();
@@ -82,7 +81,7 @@ public class UsersController {
     @PostMapping("/{userId}/unfollow")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> unfollowUser(@PathVariable Long userId, Authentication authentication) {
-        UserResponse currentUser = getCurrentUser(authentication);
+        User currentUser = usersService.getCurrentUser(authentication);
         UserResponse userToUnfollow = usersService.getUserById(userId);
 
         String username = userToUnfollow.getUsername();
@@ -93,39 +92,30 @@ public class UsersController {
     }
 
     @GetMapping("/{userId}/following")
-    public ResponseEntity<List<UserResponse>> getFollowingUsers(@PathVariable Long userId, Authentication authentication) {
-        UserResponse currentUser = getCurrentUser(authentication);
-        UserResponse user = usersService.getUserById(userId);
+    public ResponseEntity<?> getFollowing(@PathVariable Long userId, Authentication authentication) {
+        User currentUser = usersService.getCurrentUser(authentication);
 
-        List<UserResponse> following = subscriptionsService.getFollowing(user.getId(), currentUser);
+        List<UserResponse> following = subscriptionsService.getFollowing(userId, currentUser);
 
         return ResponseEntity.ok(following);
     }
 
     @GetMapping("/{userId}/follower")
-    public ResponseEntity<List<UserResponse>> getFollowers(@PathVariable Long userId, Authentication authentication) {
-        UserResponse currentUser = getCurrentUser(authentication);
-        UserResponse user = usersService.getUserById(userId);
+    public ResponseEntity<?> getFollowers(@PathVariable Long userId, Authentication authentication) {
+        User currentUser = usersService.getCurrentUser(authentication);
 
-        List<UserResponse> followers = subscriptionsService.getFollowers(user.getId(), currentUser);
+        List<UserResponse> followers = subscriptionsService.getFollowers(userId, currentUser);
 
         return ResponseEntity.ok(followers);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String q, Authentication authentication) {
-        UserResponse currentUser = getCurrentUser(authentication);
+        User currentUser = usersService.getCurrentUser(authentication);
         List<UserResponse> users = usersService.searchUsers(q);
 
         return ResponseEntity.ok(users);
     }
 
-    private UserResponse getCurrentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
 
-        String username = authentication.getName();
-        return usersService.getUserByUsername(username);
-    }
 }
