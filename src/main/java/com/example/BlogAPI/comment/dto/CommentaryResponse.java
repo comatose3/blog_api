@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class CommentaryResponse {
     private Long id;
-    private String author;
     private String text;
     private PostRequest post;
     private UserRequest user;

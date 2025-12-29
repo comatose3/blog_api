@@ -20,11 +20,14 @@ import java.util.Map;
 @RequestMapping("/api/users")
 public class UsersController {
 
-    @Autowired
-    private UsersService usersService;
+    private final UsersService usersService;
+    private final SubscriptionsService subscriptionsService;
 
     @Autowired
-    private SubscriptionsService subscriptionsService;
+    public UsersController(UsersService usersService, SubscriptionsService subscriptionsService) {
+        this.usersService = usersService;
+        this.subscriptionsService = subscriptionsService;
+    }
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {

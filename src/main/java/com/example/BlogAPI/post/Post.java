@@ -19,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "post")
+@Table(name = "post") // Оставляем, так как таблица уже создана через Liquibase
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +30,10 @@ public class Post {
     @JsonIgnoreProperties("posts")
     private User user;
 
+    @Column(nullable = false) // Добавляем валидацию
     private String name;
+
+    @Column(nullable = false, length = 5000) // Указываем длину для content
     private String content;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
@@ -39,16 +42,16 @@ public class Post {
 
     @ManyToMany()
     @JoinTable(
-            name = "post_tag",
+            name = "post_tag", // Оставляем, так как таблица связей уже создана
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private List<Tag> tags = new ArrayList<>();
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

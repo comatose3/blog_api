@@ -1,6 +1,9 @@
 package com.example.BlogAPI.post.dto;
 
+import com.example.BlogAPI.user.dto.UserRequest;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,9 +12,9 @@ import lombok.Setter;
 @Setter
 public class PostRequest {
 
-    @NotBlank
-    @Size(min = 1, max = 50, message = "Некорректный никнейм")
-    private String author;
+    @NotNull
+    @Valid
+    private UserRequest  user;
 
     @NotBlank
     @Size(min = 1, max = 50, message = "Некорректное название поста")

@@ -14,11 +14,12 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    @Value("${app.jwtSecret}")
-    private String jwtSecret;
+    private String jwtSecret = "mySuperSecretKeyThatIsAtLeast512BitsLongForHS512AlgorithmSecurityRequirementsMySuperSecretKey123";
 
-    @Value("${app.jwtExpirationMs}")
-    private int jwtExpirationMs;
+    // @Value("${app.jwtExpirationMs}")
+    // private int jwtExpirationMs;
+
+    private int jwtExpirationMs = 86400000; // 24 часа
 
     private SecretKey getSigningKey() {
         // Для HS512 ключ должен быть минимум 512 бит (64 байта)

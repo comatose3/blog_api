@@ -3,8 +3,12 @@ package com.example.BlogAPI.comment;
 import com.example.BlogAPI.comment.dto.CommentaryRequest;
 import com.example.BlogAPI.comment.dto.CommentaryResponse;
 import com.example.BlogAPI.comment.dto.CommentaryUpdate;
+import com.example.BlogAPI.kafka.events.CommentCreatedEvent;
+import com.example.BlogAPI.kafka.producer.KafkaProducerService;
+import com.example.BlogAPI.post.Post;
 import com.example.BlogAPI.post.PostsRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,17 +18,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @Transactional(readOnly = true)
 public class CommentariesService {
     private final CommentariesRepository commentariesRepository;
     private final PostsRepository postsRepository;
     private final ModelMapper modelMapper;
+    private final KafkaProducerService kafkaProducerService;
 
     @Autowired
-    public CommentariesService(CommentariesRepository commentariesRepository, PostsRepository postsRepository, ModelMapper modelMapper) {
+    public CommentariesService(CommentariesRepository commentariesRepository, PostsRepository postsRepository, ModelMapper modelMapper, KafkaProducerService kafkaProducerService) {
         this.commentariesRepository = commentariesRepository;
         this.postsRepository = postsRepository;
         this.modelMapper = modelMapper;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     public List<CommentaryResponse> getAllCommentariesByPost(Long postId) {
@@ -42,7 +49,34 @@ public class CommentariesService {
 
     @Transactional
     public CommentaryResponse writeCommentary(Long postId, CommentaryRequest commentaryRequest) {
-        return convertToCommentaryResponse(commentariesRepository.save(convertToCommentary(commentaryRequest)));
+        log.info("Creating comment for post: {}", postId);
+
+        Post post = postsRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("Post with id: " + postId + " not found"));
+
+        Commentary commentary = convertToCommentary(commentaryRequest);
+        commentary.setPost(post);
+
+        Commentary savedCommentary = commentariesRepository.save(commentary);
+
+        try {
+            CommentCreatedEvent event = new CommentCreatedEvent(
+                    savedCommentary.getId(),
+                    savedCommentary.getText(),
+                    post.getId(),
+                    post.getName(),
+                    savedCommentary.getUser().getId(),
+                    savedCommentary.getUser().getUsername(),
+                    savedCommentary.getCreatedAt()
+            );
+
+            kafkaProducerService.sendCommentCreatedEvent(event);
+            log.info("Comment created and event sent to Kafka: commentId={}", savedCommentary.getId());
+        } catch (Exception e) {
+            log.error("Failed to send CommentCreatedEvent to Kakfa: {}", e.getMessage());
+        }
+
+        return convertToCommentaryResponse(savedCommentary);
     }
 
     @Transactional
