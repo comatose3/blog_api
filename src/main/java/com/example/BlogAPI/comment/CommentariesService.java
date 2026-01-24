@@ -4,9 +4,12 @@ import com.example.BlogAPI.comment.dto.CommentaryRequest;
 import com.example.BlogAPI.comment.dto.CommentaryResponse;
 import com.example.BlogAPI.comment.dto.CommentaryUpdate;
 import com.example.BlogAPI.kafka.events.CommentCreatedEvent;
+import com.example.BlogAPI.kafka.events.CommentUpdatedEvent;
 import com.example.BlogAPI.kafka.producer.KafkaProducerService;
 import com.example.BlogAPI.post.Post;
 import com.example.BlogAPI.post.PostsRepository;
+import com.example.BlogAPI.user.User;
+import com.example.BlogAPI.user.UsersRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -23,13 +26,15 @@ import java.util.stream.Collectors;
 public class CommentariesService {
     private final CommentariesRepository commentariesRepository;
     private final PostsRepository postsRepository;
+    private final UsersRepository usersRepository;
     private final ModelMapper modelMapper;
     private final KafkaProducerService kafkaProducerService;
 
     @Autowired
-    public CommentariesService(CommentariesRepository commentariesRepository, PostsRepository postsRepository, ModelMapper modelMapper, KafkaProducerService kafkaProducerService) {
+    public CommentariesService(CommentariesRepository commentariesRepository, PostsRepository postsRepository, UsersRepository usersRepository, ModelMapper modelMapper, KafkaProducerService kafkaProducerService) {
         this.commentariesRepository = commentariesRepository;
         this.postsRepository = postsRepository;
+        this.usersRepository = usersRepository;
         this.modelMapper = modelMapper;
         this.kafkaProducerService = kafkaProducerService;
     }
@@ -54,8 +59,13 @@ public class CommentariesService {
         Post post = postsRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post with id: " + postId + " not found"));
 
+
+        User user = usersRepository.findByUsername(commentaryRequest.getUser().getUsername())
+                .orElseThrow(() -> new RuntimeException("User with name " + commentaryRequest.getUser().getUsername() + " not found"));
+
         Commentary commentary = convertToCommentary(commentaryRequest);
         commentary.setPost(post);
+        commentary.setUser(user);
 
         Commentary savedCommentary = commentariesRepository.save(commentary);
 
@@ -81,12 +91,31 @@ public class CommentariesService {
 
     @Transactional
     public CommentaryResponse updateCommentary(Long commentaryId, CommentaryUpdate commentaryUpdate) {
+        log.info("Updating comment: {}",  commentaryId);
         Commentary commentaryToUpdate = commentariesRepository.findById(commentaryId)
                 .orElseThrow(() -> new EntityNotFoundException("Commentary with id: " + commentaryId + " not found"));
 
         commentaryToUpdate.setText(commentaryUpdate.getText());
 
-        return convertToCommentaryResponse(commentariesRepository.save(commentaryToUpdate));
+        Commentary updatedCommentary = commentariesRepository.save(commentaryToUpdate);
+
+        try {
+            CommentUpdatedEvent event = new CommentUpdatedEvent(
+                    updatedCommentary.getId(),
+                    updatedCommentary.getText(),
+                    updatedCommentary.getPost().getId(),
+                    updatedCommentary.getPost().getName(),
+                    updatedCommentary.getUser().getId(),
+                    updatedCommentary.getUser().getUsername()
+            );
+
+            kafkaProducerService.sendCommentUpdatedEvent(event);
+            log.info("Comment updated and event sent to Kafka: commentId={}", updatedCommentary.getId());
+        } catch (Exception e) {
+            log.error("Failed to send CommentUpdatedEvent to Kafka: {}", e.getMessage());
+        }
+
+        return convertToCommentaryResponse(updatedCommentary);
     }
 
     @Transactional

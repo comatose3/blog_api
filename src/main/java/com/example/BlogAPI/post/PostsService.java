@@ -7,44 +7,55 @@ import com.example.BlogAPI.kafka.producer.KafkaProducerService;
 import com.example.BlogAPI.post.dto.PostRequest;
 import com.example.BlogAPI.post.dto.PostResponse;
 import com.example.BlogAPI.post.dto.PostUpdate;
+import com.example.BlogAPI.tag.Tag;
 import com.example.BlogAPI.user.User;
 import com.example.BlogAPI.user.UsersRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @Transactional(readOnly = true)
 public class PostsService {
+
     private final PostsRepository postsRepository;
-    private final UsersRepository  usersRepository;
+    private final UsersRepository usersRepository;
     private final ModelMapper modelMapper;
     private final KafkaProducerService kafkaProducer;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public PostsService(PostsRepository postsRepository, UsersRepository  usersRepository, ModelMapper modelMapper, KafkaProducerService kafkaProducer) {
+    public PostsService(PostsRepository postsRepository,
+                        UsersRepository usersRepository,
+                        ModelMapper modelMapper,
+                        KafkaProducerService kafkaProducer,
+                        ApplicationEventPublisher eventPublisher) {
         this.postsRepository = postsRepository;
         this.usersRepository = usersRepository;
         this.modelMapper = modelMapper;
         this.kafkaProducer = kafkaProducer;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<PostResponse> getAllPosts() {
+        log.info("Fetching all posts");
         return postsRepository.findAll().stream()
-                .map(post -> convertToPostResponseWithoutComments(post))
+                .map(this::convertToPostResponseWithoutComments)
                 .collect(Collectors.toList());
     }
 
     public PostResponse getPostByIdWithComments(Long id) {
         Post post = postsRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post with id " + id + " not found"));
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Post with id " + id + " not found"));
 
         return convertToPostResponseWithComments(post);
     }
@@ -55,34 +66,20 @@ public class PostsService {
 
         Post post = convertToPost(postRequest);
 
-        if (postRequest.getUser() != null && postRequest.getUser().getUsername() != null) {
-            User user = usersRepository.findByUsername(postRequest.getUser().getUsername())
-                    .orElseThrow(() -> new RuntimeException("User with name " + postRequest.getUser().getUsername() + " not found"));
+        if (postRequest.getUser() != null &&
+                postRequest.getUser().getUsername() != null) {
+
+            User user = usersRepository.findByUsername(
+                            postRequest.getUser().getUsername())
+                    .orElseThrow(() ->
+                            new RuntimeException("User not found"));
+
             post.setUser(user);
         }
 
         Post savedPost = postsRepository.save(post);
 
-        try {
-            PostCreatedEvent event = new PostCreatedEvent(
-                    savedPost.getId(),
-                    savedPost.getUser().getId(),
-                    savedPost.getUser().getUsername(),
-                    savedPost.getName(),
-                    savedPost.getContent(),
-                    savedPost.getTags() != null ?
-                            savedPost.getTags().stream()
-                                    .map(tag -> tag.getName())
-                                    .collect(Collectors.toList()) :
-                            List.of(),
-                    savedPost.getCreatedAt()
-            );
-
-            kafkaProducer.sendPostCreatedEvent(event);
-            log.info("Post created and event sent to Kafka: postId={}", savedPost.getId());
-        } catch (Exception e) {
-            log.error("Failed to send PostCreatedEvent to Kafka: {}", e.getMessage());
-        }
+        eventPublisher.publishEvent(new PostCreatedEvent(savedPost.getId()));
 
         return convertToPostResponseWithoutComments(savedPost);
     }
@@ -90,33 +87,17 @@ public class PostsService {
     @Transactional
     public PostResponse updatePost(Long id, PostUpdate postUpdate) {
         log.info("Updating post: {}", id);
-        Post postToUpdate = postsRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post with id " + id + " not found"));
 
-        postToUpdate.setName(postUpdate.getName());
-        postToUpdate.setContent(postUpdate.getContent());
+        Post post = postsRepository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Post not found"));
 
-        Post updatedPost = postsRepository.save(postToUpdate);
+        post.setName(postUpdate.getName());
+        post.setContent(postUpdate.getContent());
 
-        try {
-            PostUpdatedEvent event = new PostUpdatedEvent(
-                    updatedPost.getId(),
-                    updatedPost.getName(),
-                    updatedPost.getContent(),
-                    updatedPost.getTags() != null ?
-                            updatedPost.getTags().stream()
-                                    .map(tag -> tag.getName())
-                                    .collect(Collectors.toList()) :
-                            List.of(),
-                    updatedPost.getUser().getId(),
-                    updatedPost.getUpdatedAt()
-            );
+        Post updatedPost = postsRepository.save(post);
 
-            kafkaProducer.sendPostUpdatedEvent(event);
-            log.info("Post updated and event sent to Kafka: postId={}", updatedPost.getId());
-        } catch (Exception e) {
-            log.error("Failed to send PostUpdatedEvent to Kafka: {}", e.getMessage());
-        }
+        sendPostUpdatedEvent(updatedPost);
 
         return convertToPostResponseWithoutComments(updatedPost);
     }
@@ -124,10 +105,54 @@ public class PostsService {
     @Transactional
     public void deletePost(Long id) {
         if (!postsRepository.existsById(id)) {
-            throw new EntityNotFoundException("Post not found with id: " + id);
+            throw new EntityNotFoundException("Post not found");
         }
 
         postsRepository.deleteById(id);
+        log.info("Post deleted: {}", id);
+    }
+
+    private void sendPostCreatedEvent(Post post) {
+        try {
+            PostCreatedEvent event = new PostCreatedEvent(
+                    post.getId(),
+                    post.getUser().getId(),
+                    post.getUser().getUsername(),
+                    post.getName(),
+                    post.getContent(),
+                    post.getTags() != null
+                            ? post.getTags().stream()
+                            .map(Tag::getName)
+                            .collect(Collectors.toList())
+                            : List.of(),
+                    post.getCreatedAt()
+            );
+
+            kafkaProducer.sendPostCreatedEvent(event);
+        } catch (Exception e) {
+            log.error("Kafka PostCreatedEvent failed", e);
+        }
+    }
+
+    private void sendPostUpdatedEvent(Post post) {
+        try {
+            PostUpdatedEvent event = new PostUpdatedEvent(
+                    post.getId(),
+                    post.getName(),
+                    post.getContent(),
+                    post.getTags() != null
+                            ? post.getTags().stream()
+                            .map(Tag::getName)
+                            .collect(Collectors.toList())
+                            : List.of(),
+                    post.getUser().getId(),
+                    post.getUpdatedAt()
+            );
+
+            kafkaProducer.sendPostUpdatedEvent(event);
+        } catch (Exception e) {
+            log.error("Kafka PostUpdatedEvent failed", e);
+        }
     }
 
     private Post convertToPost(PostRequest postRequest) {
@@ -139,13 +164,13 @@ public class PostsService {
     }
 
     private PostResponse convertToPostResponseWithComments(Post post) {
-        PostResponse postResponse = modelMapper.map(post, PostResponse.class);
+        PostResponse response = modelMapper.map(post, PostResponse.class);
 
-        List<CommentaryRequest> commentaryRequests = post.getComments().stream()
-                .map(comment -> modelMapper.map(comment, CommentaryRequest.class))
+        List<CommentaryRequest> comments = post.getComments().stream()
+                .map(c -> modelMapper.map(c, CommentaryRequest.class))
                 .collect(Collectors.toList());
 
-        postResponse.setCommentaryRequests(commentaryRequests);
-        return postResponse;
+        response.setCommentaryRequests(comments);
+        return response;
     }
 }

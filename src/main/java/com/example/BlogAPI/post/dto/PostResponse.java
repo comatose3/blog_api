@@ -22,6 +22,9 @@ public class PostResponse {
     private String content;
     private List<CommentaryRequest> commentaryRequests;
     private List<TagRequest>  tagRequests;
+    private Long totalViews;
+    private Long uniqueViews;
+    private Double trendingScore;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

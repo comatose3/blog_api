@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -30,14 +31,12 @@ public class PostsController {
 
     @GetMapping()
     public ResponseEntity<List<PostResponse>> getAllPosts() {
-        List<PostResponse> allPosts = postsService.getAllPosts();
-        return new ResponseEntity<>(allPosts, HttpStatus.OK);
+        return ResponseEntity.ok(postsService.getAllPosts());
     }
 
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponse> getPostById(@PathVariable Long postId) {
-        PostResponse post = postsService.getPostByIdWithComments(postId);
-        return new ResponseEntity<>(post, HttpStatus.OK);
+        return ResponseEntity.ok(postsService.getPostByIdWithComments(postId));
     }
 
     @PostMapping()

@@ -1,6 +1,5 @@
 package com.example.BlogAPI.kafka.events;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,7 +11,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CommentCreatedEvent extends BaseEvent {
+public class CommentUpdatedEvent extends BaseEvent {
     private Long commentId;
     private String text;
     private Long postId;
@@ -20,17 +19,13 @@ public class CommentCreatedEvent extends BaseEvent {
     private Long userId;
     private String username;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime createdAt;
-
-    public CommentCreatedEvent(Long commentId, String text, Long postId, String postName, Long userId, String username, LocalDateTime createdAt) {
-        super(UUID.randomUUID().toString(), LocalDateTime.now(), "COMMENT_CREATED");
+    public CommentUpdatedEvent(Long commentId, String text, Long postId, String postName, Long userId, String username) {
+        super(UUID.randomUUID().toString(), LocalDateTime.now(), "COMMENT_UPDATED");
         this.commentId = commentId;
         this.text = text;
         this.postId = postId;
         this.postName = postName;
         this.userId = userId;
         this.username = username;
-        this.createdAt = createdAt;
     }
 }

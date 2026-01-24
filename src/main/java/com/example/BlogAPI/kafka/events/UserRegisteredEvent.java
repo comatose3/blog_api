@@ -10,14 +10,13 @@ import java.util.UUID;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class UserRegisteredEvent extends BaseEvent {
     private Long userId;
     private String username;
     private String email;
 
-    public UserRegisteredEvent(String eventId, LocalDateTime timestamp, String eventType, Long userId, String username, String email) {
+    public UserRegisteredEvent(Long userId, String username, String email) {
         super(UUID.randomUUID().toString(), LocalDateTime.now(), "USER_REGISTERED");
         this.userId = userId;
         this.username = username;

@@ -23,17 +23,10 @@ public class PostCreatedEvent extends BaseEvent {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
-    // ВАЖНО: Параметры ТОЛЬКО для полей этого класса
-    // BaseEvent заполняется внутри через super()
     public PostCreatedEvent(Long postId, Long userId, String username,
                             String name, String content, List<String> tags,
                             LocalDateTime createdAt) {
-        // Заполняем поля родителя через super()
-        super(UUID.randomUUID().toString(),
-                LocalDateTime.now(),
-                "POST_CREATED");
-
-        // Заполняем свои поля
+        super(UUID.randomUUID().toString(), LocalDateTime.now(),"POST_CREATED");
         this.postId = postId;
         this.userId = userId;
         this.username = username;
@@ -41,5 +34,9 @@ public class PostCreatedEvent extends BaseEvent {
         this.content = content;
         this.tags = tags;
         this.createdAt = createdAt;
+    }
+
+    public PostCreatedEvent(Long postId) {
+        this.postId = postId;
     }
 }

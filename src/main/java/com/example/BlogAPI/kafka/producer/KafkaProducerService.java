@@ -1,9 +1,6 @@
 package com.example.BlogAPI.kafka.producer;
 
-import com.example.BlogAPI.kafka.events.CommentCreatedEvent;
-import com.example.BlogAPI.kafka.events.PostCreatedEvent;
-import com.example.BlogAPI.kafka.events.PostUpdatedEvent;
-import com.example.BlogAPI.kafka.events.UserRegisteredEvent;
+import com.example.BlogAPI.kafka.events.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.support.SendResult;
@@ -29,6 +26,9 @@ public class KafkaProducerService {
     @Value("${kafka.topics.comment-created}")
     private String commentCreatedTopic;
 
+    @Value("comment-updated-topic")
+    private String commentUpdatedTopic;
+
     @Value("${kafka.topics.user-registered}")
     private String userRegisteredTopic;
 
@@ -42,6 +42,10 @@ public class KafkaProducerService {
 
     public void sendCommentCreatedEvent(CommentCreatedEvent event) {
         sendEvent(commentCreatedTopic, event.getCommentId().toString(), event);
+    }
+
+    public void sendCommentUpdatedEvent(CommentUpdatedEvent event) {
+        sendEvent(commentUpdatedTopic, event.getCommentId().toString(), event);
     }
 
     public void sendUserRegisteredEvent(UserRegisteredEvent event) {

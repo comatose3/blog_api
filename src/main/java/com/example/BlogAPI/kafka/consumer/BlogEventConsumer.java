@@ -1,9 +1,6 @@
 package com.example.BlogAPI.kafka.consumer;
 
-import com.example.BlogAPI.kafka.events.CommentCreatedEvent;
-import com.example.BlogAPI.kafka.events.PostCreatedEvent;
-import com.example.BlogAPI.kafka.events.PostUpdatedEvent;
-import com.example.BlogAPI.kafka.events.UserRegisteredEvent;
+import com.example.BlogAPI.kafka.events.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -48,7 +45,7 @@ public class BlogEventConsumer {
     }
 
     @KafkaListener(
-            topics = "${kafka.topics.comment-created}",
+            topics = "${kafka.topics.post-updated}",
             groupId = "${spring.kafka.consumer.group-id}"
     )
     public void handleCommentCreated(@Payload CommentCreatedEvent event) {
@@ -56,6 +53,17 @@ public class BlogEventConsumer {
                 event.getCommentId(), event.getPostId(), event.getUsername());
 
         processCommentCreated(event);
+    }
+
+    @KafkaListener(
+            topics = "${kafka.topics.comment-updated}",
+            groupId = "${spring.kafka.consumer.group-id}"
+    )
+    public void handleCommentUpdated(@Payload CommentUpdatedEvent event) {
+        log.info("Received COMMENT_UPDATED event: commentId={}, postId={}",
+                event.getCommentId(), event.getPostId());
+
+        processCommentUpdated(event);
     }
 
     @KafkaListener(
@@ -108,6 +116,13 @@ public class BlogEventConsumer {
 
         // TODO: Модерация контента
         // moderationService.moderate(event);
+    }
+
+    private void processCommentUpdated(CommentUpdatedEvent event) {
+        log.info("Processing: Invalidating cache for comment {}", event.getCommentId());
+
+        // TODO: Инвалидация кеша
+        // cacheService.invalidate("post:" + event.getPostId());
     }
 
     private void processUserRegistered(UserRegisteredEvent event) {

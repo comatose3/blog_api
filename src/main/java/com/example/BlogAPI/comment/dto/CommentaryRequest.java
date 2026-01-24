@@ -1,5 +1,7 @@
 package com.example.BlogAPI.comment.dto;
 
+import com.example.BlogAPI.user.dto.UserRequest;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -12,9 +14,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentaryRequest {
+
     @NotNull
-    @Size(min = 2, max = 50, message = "Некорректный никнейм")
-    private String author;
+    @Valid
+    private UserRequest user;
 
     @NotNull
     @Size(min = 1, max = 1000)

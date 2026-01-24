@@ -17,6 +17,9 @@ public class KafkaConfig {
     @Value("${kafka.topics.comment-created}")
     private String commentCreatedTopic;
 
+    @Value("comment-updated-topic")
+    private String commentUpdatedTopic;
+
     @Value("${kafka.topics.user-registered}")
     private String userRegisteredTopic;
 
@@ -39,6 +42,14 @@ public class KafkaConfig {
     @Bean
     public NewTopic commentCreatedTopic() {
         return TopicBuilder.name(commentCreatedTopic)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic commentUpdatedTopic() {
+        return TopicBuilder.name(commentUpdatedTopic)
                 .partitions(3)
                 .replicas(1)
                 .build();

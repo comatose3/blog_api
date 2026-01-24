@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class PostRequest {
@@ -23,4 +25,6 @@ public class PostRequest {
     @NotBlank
     @Size(min = 10, max = 1000, message = "Недопустимое количество символов")
     private String content;
+
+    private List<String> tags;
 }
